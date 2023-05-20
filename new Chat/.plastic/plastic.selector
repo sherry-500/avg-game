@@ -1,0 +1,4 @@
+repository "new Chat@guwenfei@cloud.cn"
+  path "/"
+    br "/main"
+    co "/main"
