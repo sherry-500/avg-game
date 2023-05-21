@@ -33,14 +33,8 @@ public class StableDiffusion
             string response = client.UploadString($"{api_url}/sdapi/v1/txt2img", jsonPayload);
             dynamic r = JsonConvert.DeserializeObject(response);
             byte[] imageBytes = Convert.FromBase64String(r.images[0].ToString().Split(",", 2)[0]);
-
-            using (MemoryStream stream = new MemoryStream(imageBytes))
-            {
-                System.Drawing.Image image = System.Drawing.Image.FromStream(stream);
-                image.Save("Assets/Resources/output_" + index + ".png");
-                callback(imageBytes);
-                index ++;
-            };
+            callback(imageBytes);
+            index ++;
         }
     }
 }
