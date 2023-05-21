@@ -1,6 +1,5 @@
 {
   "dependencies": {
-    "com.openai.api.unity": "https://kgithub.com/hexthedev/OpenAi-Api-Unity.git",
     "com.unity.2d.sprite": "1.0.0",
     "com.unity.collab-proxy": "2.0.3",
     "com.unity.feature.development": "1.0.1",

@@ -1,12 +1,5 @@
 {
   "dependencies": {
-    "com.openai.api.unity": {
-      "version": "https://kgithub.com/hexthedev/OpenAi-Api-Unity.git",
-      "depth": 0,
-      "source": "git",
-      "dependencies": {},
-      "hash": "aa421032388178b450bb7779c0b9b195a661bca5"
-    },
     "com.unity.2d.sprite": {
       "version": "1.0.0",
       "depth": 0,
