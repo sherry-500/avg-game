@@ -13,6 +13,7 @@ public class ChatGPT
 	private string m_OpenAI_Key; // API key
 	private string m_ApiUrl = "https://api.openai.com/v1/chat/completions"; // 定义Chat API的URL
 	public delegate void ProcessResponse(string msg);
+	protected List<Dictionary<string, string>> m_Msgs = new List<Dictionary<string, string>>();
 
 	[System.Serializable]public class PostData{
 		public string model;
@@ -24,19 +25,30 @@ public class ChatGPT
         public float presence_penalty;
         public string stop;
 	}
+
+	protected void addMsg(string role, string content){
+		m_Msgs.Add(new Dictionary<string, string>(){
+			{"role", role},
+			{"content", content}
+		});
+	}
+
+	protected void clearMsgs(){
+		m_Msgs.Clear();
+	}
  
-	public IEnumerator GetPostData(List<Dictionary<string, string>> _msgs, ProcessResponse processResponse)
+	public IEnumerator GetPostData(ProcessResponse processResponse)
 	{
 		if(m_OpenAI_Key == null) m_OpenAI_Key = ResolveLocalFileAuthArgs();
 
-		var request = new UnityWebRequest (m_ApiUrl, "POST");
+		var request = new UnityWebRequest(m_ApiUrl, "POST");
 		request.timeout = 8;
 
 		PostData _postData = new PostData
 		{
 			model = "gpt-3.5-turbo",
-			messages = _msgs,
-			max_tokens = 200,
+			messages = m_Msgs,
+			max_tokens = 300,
             temperature=0.8f,
             top_p=1,
 		};
@@ -51,10 +63,12 @@ public class ChatGPT
  
 		yield return request.SendWebRequest();
 
-		string _msg = request.downloadHandler.text;
+		string _text = request.downloadHandler.text;
 		if (request.responseCode == 200) {
-			dynamic result = JsonConvert.DeserializeObject(_msg);
-            processResponse((string)result.choices[0].message.content);
+			dynamic result = JsonConvert.DeserializeObject(_text);
+			string content = (string)result.choices[0].message.content;
+			addMsg("assistant", content);
+            processResponse(content);
 		}else{
 			Debug.Log(request.downloadHandler.text);
 		}
