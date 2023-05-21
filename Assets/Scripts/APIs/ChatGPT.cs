@@ -41,37 +41,39 @@ public class ChatGPT
 	{
 		if(m_OpenAI_Key == null) m_OpenAI_Key = ResolveLocalFileAuthArgs();
 
-		var request = new UnityWebRequest(m_ApiUrl, "POST");
-		request.timeout = 8;
-
-		PostData _postData = new PostData
+		using (var request = new UnityWebRequest(m_ApiUrl, "POST"))
 		{
-			model = "gpt-3.5-turbo",
-			messages = m_Msgs,
-			max_tokens = 300,
-            temperature=0.8f,
-            top_p=1,
-		};
-		string _jsonText = JsonConvert.SerializeObject(_postData);
-		Debug.Log(_jsonText);
-		byte[] data = System.Text.Encoding.UTF8.GetBytes(_jsonText);
-		request.uploadHandler = (UploadHandler)new UploadHandlerRaw (data);
-		request.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer ();
- 
-		request.SetRequestHeader ("Content-Type","application/json");
-		request.SetRequestHeader("Authorization",string.Format("Bearer {0}",m_OpenAI_Key));
- 
-		yield return request.SendWebRequest();
+			request.timeout = 8;
 
-		string _text = request.downloadHandler.text;
-		if (request.responseCode == 200) {
-			dynamic result = JsonConvert.DeserializeObject(_text);
-			string content = (string)result.choices[0].message.content;
-			addMsg("assistant", content);
-            processResponse(content);
-		}else{
-			Debug.Log(request.downloadHandler.text);
+			PostData _postData = new PostData
+			{
+				model = "gpt-3.5-turbo",
+				messages = m_Msgs,
+				max_tokens = 300,
+				temperature=0.8f,
+				top_p=1,
+			};
+			string _jsonText = JsonConvert.SerializeObject(_postData);
+			byte[] data = System.Text.Encoding.UTF8.GetBytes(_jsonText);
+			request.uploadHandler = (UploadHandler)new UploadHandlerRaw (data);
+			request.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer ();
+	
+			request.SetRequestHeader ("Content-Type","application/json");
+			request.SetRequestHeader("Authorization",string.Format("Bearer {0}",m_OpenAI_Key));
+	
+			yield return request.SendWebRequest();
+
+			string _text = request.downloadHandler.text;
+			if (request.responseCode == 200) {
+				dynamic result = JsonConvert.DeserializeObject(_text);
+				string content = (string)result.choices[0].message.content;
+				addMsg("assistant", content);
+				processResponse(content);
+			}else{
+				Debug.Log(request.downloadHandler.text);
+			}
 		}
+
 	}
 
 	private string ResolveLocalFileAuthArgs()
