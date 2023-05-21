@@ -81,5 +81,4 @@ public class ScriptData {
     public string name; // 角色名称
     public string spriteName; // 图片资源路径
     public string dialogueContent; // 对话内容
-
 }

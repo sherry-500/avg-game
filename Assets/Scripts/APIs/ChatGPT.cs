@@ -1,18 +1,22 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.Networking;
 using UnityEngine.UI;
+using UnityEngine.Networking;
+using Newtonsoft.Json;
+using System.IO;
+using System.Text;
 
 public class ChatGPT
 {
-	private string m_OpenAI_Key="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"; // API key
-	private string m_ApiUrl = "https://api.openai.com/v1/completions"; // 定义Chat API的URL
-    [SerializeField]private PostData m_PostDataSetting; // 配置参数
- 
+	private string m_OpenAI_Key; // API key
+	private string m_ApiUrl = "https://api.openai.com/v1/chat/completions"; // 定义Chat API的URL
+	public delegate void ProcessResponse(string msg);
+
 	[System.Serializable]public class PostData{
 		public string model;
-		public string prompt;
+		public List<Dictionary<string, string>> messages;
 		public int max_tokens; 
         public float temperature;
         public int top_p;
@@ -21,88 +25,57 @@ public class ChatGPT
         public string stop;
 	}
  
-	public IEnumerator GetPostData(string _postWord, System.Action<string> _callback)
+	public IEnumerator GetPostData(List<Dictionary<string, string>> _msgs, ProcessResponse processResponse)
 	{
-        Debug.Log("GetPostData");
+		if(m_OpenAI_Key == null) m_OpenAI_Key = ResolveLocalFileAuthArgs();
+
 		var request = new UnityWebRequest (m_ApiUrl, "POST");
+		request.timeout = 8;
+
 		PostData _postData = new PostData
 		{
-			model = m_PostDataSetting.model,
-			prompt = _postWord,
-			max_tokens = m_PostDataSetting.max_tokens,
-            temperature=m_PostDataSetting.temperature,
-            top_p=m_PostDataSetting.top_p,
-            frequency_penalty=m_PostDataSetting.frequency_penalty,
-            presence_penalty=m_PostDataSetting.presence_penalty,
-            stop=m_PostDataSetting.stop
+			model = "gpt-3.5-turbo",
+			messages = _msgs,
+			max_tokens = 200,
+            temperature=0.8f,
+            top_p=1,
 		};
- 
-		string _jsonText = JsonUtility.ToJson (_postData);
-		byte[] data = System.Text.Encoding.UTF8.GetBytes (_jsonText);
+		string _jsonText = JsonConvert.SerializeObject(_postData);
+		Debug.Log(_jsonText);
+		byte[] data = System.Text.Encoding.UTF8.GetBytes(_jsonText);
 		request.uploadHandler = (UploadHandler)new UploadHandlerRaw (data);
 		request.downloadHandler = (DownloadHandler)new DownloadHandlerBuffer ();
  
 		request.SetRequestHeader ("Content-Type","application/json");
 		request.SetRequestHeader("Authorization",string.Format("Bearer {0}",m_OpenAI_Key));
  
-		yield return request.SendWebRequest ();
- 
+		yield return request.SendWebRequest();
+
+		string _msg = request.downloadHandler.text;
 		if (request.responseCode == 200) {
-			string _msg = request.downloadHandler.text;
-			TextCallback _textback = JsonUtility.FromJson<TextCallback> (_msg);
-			if (_textback!=null && _textback.choices.Count > 0) {
-                _callback(_textback.choices [0].text);
-			}
+			dynamic result = JsonConvert.DeserializeObject(_msg);
+            processResponse((string)result.choices[0].message.content);
+		}else{
+			Debug.Log(request.downloadHandler.text);
 		}
-
-            //         // OpenAI API地址
-            // string apiUrl = "https://api.openai.com/v1/engines/gpt-3/jobs";
-
-            // // OpenAI API密钥
-            // string apiKey = "YOUR_API_KEY";
-
-            // // 创建一个RestClient对象
-            // var client = new RestClient(apiUrl);
-
-            // // 创建一个RestRequest对象
-            // var request = new RestRequest(Method.POST);
-
-            // // 在请求头中添加API密钥
-            // request.AddHeader("Authorization", "Bearer " + apiKey);
-
-            // // 添加请求内容
-            // request.AddJsonBody(new
-            // {
-            //     model = "text-davinci-002",
-            //     prompt = "What is the capital of France?",
-            //     max_tokens = 100,
-            //     n = 1,
-            //     stop = null,
-            //     temperature = 0.5,
-            // });
-
-            // // 发送请求并获取响应
-            // IRestResponse response = client.Execute(request);
-
-            // // 显示响应内容
-            // Console.WriteLine(response.Content);
-            // Console.ReadLine();
 	}
- 
-	/// <summary>
-	/// 返回的信息
-	/// </summary>
-	[System.Serializable]public class TextCallback{
-		public string id;
-		public string created;
-		public string model;
-		public List<TextSample> choices;
- 
-		[System.Serializable]public class TextSample{
-			public string text;
-			public string index;
-			public string finish_reason;
+
+	private string ResolveLocalFileAuthArgs()
+	{
+		string userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+		string authPath = $"{userPath}/.openai/auth.json";
+		FileInfo fi = new FileInfo(authPath);
+
+		if (!fi.Exists) Debug.LogError("Auth file not found!");
+
+		string json = null;
+		using (FileStream fs = fi.OpenRead())
+		{
+			byte[] buffer = new byte[fs.Length];
+			fs.Read(buffer, 0, (int)fs.Length);
+			json = Encoding.UTF8.GetString(buffer);
 		}
- 
+		dynamic result = JsonConvert.DeserializeObject(json);
+		return result.private_api_key;
 	}
 }
