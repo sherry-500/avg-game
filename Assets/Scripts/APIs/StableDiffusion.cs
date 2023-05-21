@@ -8,11 +8,12 @@ using UnityEngine;
 
 public class StableDiffusion
 {
-    private string api_url = "https://u6370-b1ae-f97271ae.neimeng.seetacloud.com:6443";
+    private string api_url;
 
     private int index = 0;
     public IEnumerator getPicture(string tokens, Action<byte[]> callback)
     {
+        if (api_url == null) api_url = MyConfig.ResolveLocalFileAuthArgs("stable_diffusion_url");
         Debug.Log("getPicture: " + tokens);
 
         var payload = new

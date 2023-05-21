@@ -39,7 +39,7 @@ public class ChatGPT
  
 	public IEnumerator GetPostData(ProcessResponse processResponse)
 	{
-		if(m_OpenAI_Key == null) m_OpenAI_Key = ResolveLocalFileAuthArgs();
+		if(m_OpenAI_Key == null) m_OpenAI_Key = MyConfig.ResolveLocalFileAuthArgs("chatgpt_api_key");
 
 		using (var request = new UnityWebRequest(m_ApiUrl, "POST"))
 		{
@@ -74,24 +74,5 @@ public class ChatGPT
 			}
 		}
 
-	}
-
-	private string ResolveLocalFileAuthArgs()
-	{
-		string userPath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-		string authPath = $"{userPath}/.openai/auth.json";
-		FileInfo fi = new FileInfo(authPath);
-
-		if (!fi.Exists) Debug.LogError("Auth file not found!");
-
-		string json = null;
-		using (FileStream fs = fi.OpenRead())
-		{
-			byte[] buffer = new byte[fs.Length];
-			fs.Read(buffer, 0, (int)fs.Length);
-			json = Encoding.UTF8.GetString(buffer);
-		}
-		dynamic result = JsonConvert.DeserializeObject(json);
-		return result.private_api_key;
 	}
 }
