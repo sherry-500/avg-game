@@ -17,7 +17,11 @@ public class GameManager2 : MonoBehaviour
 
     void Start()
     {
-        StartGame();
+        // StartGame();
+        PromteGPT promteGPT = new PromteGPT();
+        StartCoroutine(promteGPT.GetPromte("车水马龙的街上到处都是高楼大厦", (string promte) => {
+            Debug.Log(promte);
+        }));
     }
 
     public void StartGame(){
